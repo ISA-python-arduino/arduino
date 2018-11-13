@@ -14,6 +14,6 @@ void loop() {
   if (Serial.available() > 0) {
     int x = Serial.parseInt();
     Serial.println(x);
-    digitalWrite(led, x < 0 ? HIGH : LOW);
+    analogWrite(led, map(x, -100, 100, 0, 255));
   }
 }
