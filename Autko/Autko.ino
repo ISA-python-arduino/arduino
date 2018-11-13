@@ -141,13 +141,19 @@ volatile static bool straight = true;
 
 struct control { 
   int code;
-  unsigned byte s;
-}
-
+  unsigned char s;
+};
+struct control c;
 void loop() {
-  struct control c;
-  if (Serial.available() > sizeof(control)) {
-    int x = Serial.readBytes(&c, sizeof(control));
+  if (Serial.available() > 0) {
+    String code = Serial.readStringUntil(';');
+    c.code = code.toInt();
+    String s = Serial.readStringUntil(';');
+    c.s = s.toInt();
     
+    setSpeed(c.s);
+    Serial.print(c.s);
+    Serial.print(' ');
+    Serial.println(c.code);
   }
 }
