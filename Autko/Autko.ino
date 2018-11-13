@@ -10,9 +10,8 @@ const unsigned int backSensorTrigger = 10;
 const unsigned int backSensorEcho = 11;
 
 void setup() {
-  Serial.begin(9600);
+  Serial.begin(57600);
   
-
   pinMode(A_ENABLE, OUTPUT);  //ustawienie pinów do PWM na output
   pinMode(B_ENABLE, OUTPUT);
 
@@ -27,8 +26,12 @@ void setup() {
 
   pinMode(backSensorTrigger, OUTPUT);
   pinMode(backSensorEcho, INPUT);
-
-  Serial.begin(9600);
+  
+  while (!Serial) {
+    ; // wait for serial port to connect. Needed for native USB port only
+  }
+  Serial.setTimeout(50);
+  
 }
 
 float measure( int trigger, int echo )
@@ -135,8 +138,16 @@ void setSpeed(short speed)
 
 volatile static bool straight = true; 
 
-void loop() 
-{
-  delay(500);
-  setSpeed(150);
+
+struct control { 
+  int code;
+  unsigned byte s;
+}
+
+void loop() {
+  struct control c;
+  if (Serial.available() > sizeof(control)) {
+    int x = Serial.readBytes(&c, sizeof(control));
+    
+  }
 }

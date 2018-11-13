@@ -10,10 +10,15 @@ void setup() {
   
 }
 
+struct control { 
+  int code;
+  unsigned byte s;
+}
+
 void loop() {
-  if (Serial.available() > 0) {
-    int x = Serial.parseInt();
-    Serial.println(x);
-    analogWrite(led, map(x, -100, 100, 0, 255));
+  struct control c;
+  if (Serial.available() > sizeof(control)) {
+    int x = Serial.readBytes(&c, sizeof(control));
+    
   }
 }
