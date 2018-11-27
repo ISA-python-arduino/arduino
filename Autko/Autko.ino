@@ -180,6 +180,22 @@ void loop() {
             // this temporary copy is necessary to protect the original data
             //   because strtok() used in parseData() replaces the commas with \0
         packet = parseData();
+
+        if(packet.cordX < -5) {
+          Serial.println("SKREC PRAWO ");
+          setRightSpeed(60);
+        }
+        else if(packet.cordX > 5) {
+          Serial.println("SKREC LEWO ");
+          setLeftSpeed(60);
+        } else {
+          Serial.println("Jedz prosto ");
+          setSpeed(100);
+        }
+      
+        //setRightSpeed
+        //setLeftSpeed
+        
         showParsedData(packet);
         newData = false;
     }
@@ -240,8 +256,8 @@ dataPacket parseData() {      // split the data into its parts
 
 
 void showParsedData(dataPacket packet) {
-    Serial.print("Message ");
-    Serial.println(packet.message);
+    //Serial.print("Message ");
+    //Serial.println(packet.message);
     Serial.print("CORDX ");
     Serial.println(packet.cordX);
     Serial.print("CORDY ");
