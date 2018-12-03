@@ -1,5 +1,3 @@
-// Example 5 - parsing text and numbers with start and end markers in the stream
-
 #include "helper.h"
 #include <Wire.h> 
 #include "Definitions.h"
@@ -23,22 +21,7 @@ boolean newData = false;
 
 void setup() {
   Serial.begin(57600);
-//  
-//  pinMode(A_ENABLE, OUTPUT);  //ustawienie pinów do PWM na output
-//  pinMode(B_ENABLE, OUTPUT);
-//
-//  pinMode(A_PHASE, OUTPUT);   //ustawienie pinów do kierunku jazdy na output
-//  pinMode(B_PHASE, OUTPUT);
-//
-//  pinMode(MODE, OUTPUT);      //ustawienie pinu rozdzaju sterowania na output
-//  digitalWrite(MODE, LOW);
-//
-//  pinMode(frontSensorTrigger, OUTPUT);
-//  pinMode(frontSensorEcho, INPUT);
-//
-//  pinMode(backSensorTrigger, OUTPUT);
-//  pinMode(backSensorEcho, INPUT);
-//  
+
   Engine();
   while (!Serial) {
     ; // wait for serial port to connect. Needed for native USB port only
@@ -157,22 +140,6 @@ struct control {
   unsigned char s;
 };
 struct control c;
-/*
-void loop() {
-  if (Serial.available() > 0) {
-    String code = Serial.readStringUntil(';');
-    c.code = code.toInt();
-    String s = Serial.readStringUntil(';');
-    c.s = s.toInt();
-    
-    setSpeed(c.s);
-    Serial.print(c.s);
-    Serial.print(' ');
-    Serial.println(c.code);
-  }
-}
-*/
-
 
 /*z repo ISA */
 void loop() {
@@ -184,21 +151,21 @@ void loop() {
         packet = parseData();
 
         if(packet.cordX < -5) {
-          Serial.println("SKREC PRAWO ");
-          setRightSpeed(60);
+         // Serial.println("SKREC PRAWO ");
+          setRightSpeed(125);
         }
         else if(packet.cordX > 5) {
-          Serial.println("SKREC LEWO ");
-          setLeftSpeed(60);
+         // Serial.println("SKREC LEWO ");
+          setLeftSpeed(125);
         } else {
-          Serial.println("Jedz prosto ");
-          setSpeed(100);
+         // Serial.println("Jedz prosto ");
+          setCustomSpeed(255);
         }
       
         //setRightSpeed
         //setLeftSpeed
         
-        showParsedData(packet);
+       // showParsedData(packet);
         newData = false;
     }
 }
