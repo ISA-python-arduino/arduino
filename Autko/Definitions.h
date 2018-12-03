@@ -1,12 +1,11 @@
 //ENGINE PIN
-
 #define A_ENABLE 2  //PWM
-#define A_PHASE 22  //0 - przod, 1 - tyl DIGITAL
+#define A_PHASE 46 //0 - przod, 1 - tyl DIGITAL
 #define B_ENABLE 3  //PWM
-#define B_PHASE 23  //0 - przod, 1 - tyl DIGITAL
-#define MODE 30     //sterowanie 0 - ciężkie, 1 - uproszczone DIGITAL
-#define LEFT_ENCODER_0 40
-#define LEFT_ENCODER_1 41
+#define B_PHASE 48  //0 - przod, 1 - tyl DIGITAL
+#define MODE 44     //sterowanie 0 - ciężkie, 1 - uproszczone DIGITAL
+#define LEFT_ENCODER_0 50
+#define LEFT_ENCODER_1 51
 #define RIGHT_ENCODER_0 42
 #define RIGHT_ENCODER_1 43
 

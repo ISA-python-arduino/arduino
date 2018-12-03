@@ -3,6 +3,7 @@
 #include "helper.h"
 #include <Wire.h> 
 #include "Definitions.h"
+#include "Engine.h"
 
 #define addr 0x1E
 const unsigned int number_of_mesures = 5;
@@ -22,22 +23,23 @@ boolean newData = false;
 
 void setup() {
   Serial.begin(57600);
-  
-  pinMode(A_ENABLE, OUTPUT);  //ustawienie pinów do PWM na output
-  pinMode(B_ENABLE, OUTPUT);
-
-  pinMode(A_PHASE, OUTPUT);   //ustawienie pinów do kierunku jazdy na output
-  pinMode(B_PHASE, OUTPUT);
-
-  pinMode(MODE, OUTPUT);      //ustawienie pinu rozdzaju sterowania na output
-  digitalWrite(MODE, LOW);
-
-  pinMode(frontSensorTrigger, OUTPUT);
-  pinMode(frontSensorEcho, INPUT);
-
-  pinMode(backSensorTrigger, OUTPUT);
-  pinMode(backSensorEcho, INPUT);
-  
+//  
+//  pinMode(A_ENABLE, OUTPUT);  //ustawienie pinów do PWM na output
+//  pinMode(B_ENABLE, OUTPUT);
+//
+//  pinMode(A_PHASE, OUTPUT);   //ustawienie pinów do kierunku jazdy na output
+//  pinMode(B_PHASE, OUTPUT);
+//
+//  pinMode(MODE, OUTPUT);      //ustawienie pinu rozdzaju sterowania na output
+//  digitalWrite(MODE, LOW);
+//
+//  pinMode(frontSensorTrigger, OUTPUT);
+//  pinMode(frontSensorEcho, INPUT);
+//
+//  pinMode(backSensorTrigger, OUTPUT);
+//  pinMode(backSensorEcho, INPUT);
+//  
+  Engine();
   while (!Serial) {
     ; // wait for serial port to connect. Needed for native USB port only
   }
@@ -114,9 +116,9 @@ void average()
   distBack = remove_min_and_count_average(minBack, number_of_mesures, backMeasures);
 }
 
-void setLeftSpeed( short speed )
+void setLeftSpeed( short s )
 {
-  if (speed < 0)
+  if (s < 0)
   {
     digitalWrite(B_PHASE, LOW);
   }
@@ -125,12 +127,12 @@ void setLeftSpeed( short speed )
     digitalWrite(B_PHASE, HIGH);
   }
   
-  analogWrite(B_ENABLE, speed < 0 ? -speed : speed);
+  analogWrite(B_ENABLE, s < 0 ? -s : s);
 }
 
-void setRightSpeed( short speed )
+void setRightSpeed( short s)
 {
-  if (speed < 0)
+  if (s < 0)
   {
     digitalWrite(A_PHASE, LOW);
   }
@@ -138,13 +140,13 @@ void setRightSpeed( short speed )
   {
     digitalWrite(A_PHASE, HIGH);
   }
-  analogWrite(A_ENABLE, speed < 0 ? -speed : speed);
+  analogWrite(A_ENABLE, s < 0 ? -s : s);
 }
 
-void setSpeed(short speed)
+void setCustomSpeed(short s)
 {
-  setLeftSpeed(speed);
-  setRightSpeed(speed);
+  setLeftSpeed(s);
+  setRightSpeed(s);
 }
 
 volatile static bool straight = true; 
