@@ -19,6 +19,19 @@ dataPacket packet;
 boolean newData = false;
 
 
+float dt = 20; //co ile pobiera się próbkę
+int ep; //uchyb poprzedni
+int en; //uchyb następny
+int U; //sygnał sterujący
+int C; //część całkująca
+int Kp = 2; //wzmocnienie
+int Ti = 4; //stała całkowania
+int Td = 8; //stała różniczkowania
+
+
+const int minimumX= -100;
+const int maximumX = 100;
+
 void setup() {
   Serial.begin(57600);
 
@@ -141,36 +154,55 @@ struct control {
 };
 struct control c;
 
-/*z repo ISA */
-void loop() {
-    recvWithStartEndMarkers();
-    if (newData == true) {
-        strcpy(tempChars, receivedChars);
-            // this temporary copy is necessary to protect the original data
-            //   because strtok() used in parseData() replaces the commas with \0
-        packet = parseData();
-
-        if(packet.cordX < -5) {
-         // Serial.println("SKREC PRAWO ");
-          setRightSpeed(125);
-        }
-        else if(packet.cordX > 5) {
-         // Serial.println("SKREC LEWO ");
-          setLeftSpeed(125);
-        } else {
-         // Serial.println("Jedz prosto ");
-          setCustomSpeed(255);
-        }
-      
-        //setRightSpeed
-        //setLeftSpeed
-        
-       // showParsedData(packet);
-        newData = false;
-    }
+int getPidSpeed(int cordX) {
+  return pid(cordX);
 }
 
-//============
+int pid(int x)
+{
+  en = x; //tutaj założyłem, że wartość uchybu poznajemy za pomocą odczytu z pinu A2
+  C += ((ep + en)/2)*dt;
+  U = Kp*(en + (1/Ti)*C/1000 + Td*(en - ep)*1000/dt);
+  ep = en;
+  return U;
+}
+
+void SetPowerLevel(PowerSideEnum side, int level)
+{
+  level = constrain(level, -255, 255);
+  
+  if (side == PowerSideEnum::Right) {
+    if (level > 0) {
+      // do przodu
+      digitalWrite(A_PHASE, 1);
+      analogWrite(A_ENABLE, level);
+    } else if (level < 0) {
+      // do tyłu
+      digitalWrite(A_PHASE, 0);
+      analogWrite(A_ENABLE, -level);
+    } else {
+      // stop
+      digitalWrite(A_PHASE, 0);
+      analogWrite(A_ENABLE, 0);
+    }
+  }
+  
+  if (side == PowerSideEnum::Left) {
+    if (level > 0) {
+      // do przodu
+      digitalWrite(B_PHASE, 1);
+      analogWrite(B_ENABLE, level);
+    } else if (level < 0) {
+      // do tyłu
+      digitalWrite(B_PHASE, 0);
+      analogWrite(B_ENABLE, -level);
+    } else {
+      // stop
+      digitalWrite(B_PHASE, 0);
+      analogWrite(B_ENABLE, 0);
+    }
+  } 
+}
 
 void recvWithStartEndMarkers() {
     static boolean recvInProgress = false;
@@ -204,8 +236,6 @@ void recvWithStartEndMarkers() {
     }
 }
 
-//============
-
 dataPacket parseData() {      // split the data into its parts
 
     dataPacket tmpPacket;
@@ -220,6 +250,9 @@ dataPacket parseData() {      // split the data into its parts
 
     strtokIndx = strtok(NULL, ",");
     tmpPacket.cordY = atoi(strtokIndx);     // convert this part to a float
+
+    //Serial.println("CordX: ");
+    //Serial.print(tmpPacket.cordX);
     return tmpPacket;
 }
 
@@ -231,4 +264,65 @@ void showParsedData(dataPacket packet) {
     Serial.println(packet.cordX);
     Serial.print("CORDY ");
     Serial.println(packet.cordY);
+}
+
+/*z repo ISA */
+void loop() {
+    recvWithStartEndMarkers();
+    if (newData == true) {
+        //Serial.println("Odebrano dane");
+        strcpy(tempChars, receivedChars);
+            // this temporary copy is necessary to protect the original data
+            //   because strtok() used in parseData() replaces the commas with \0
+        packet = parseData();
+        int cordX = packet.cordX;
+        int carSpeed = getPidSpeed(cordX);
+        Serial.println("CordX: ");
+        Serial.print(cordX);
+        Serial.println("Car speed");
+        Serial.println(carSpeed);
+        
+        if (carSpeed <= maximumX && carSpeed >= minimumX) {
+          int s = map(carSpeed, minimumX, maximumX, 0, 105);
+          Serial.print("Predkosc po pid ");
+          Serial.println(s);
+          Serial.print("CordX ");
+          Serial.println(cordX);
+          if (cordX >= -10 && cordX <= 10) {
+             SetPowerLevel(PowerSideEnum::Right, 150);
+             SetPowerLevel(PowerSideEnum::Left, 150);
+             Serial.println("Jedz prosto");
+          } else if (cordX <= -10 && cordX >= -100) {
+            /* skrecaj w lewo */
+             SetPowerLevel(PowerSideEnum::Right, 150 + s);
+             SetPowerLevel(PowerSideEnum::Left, 150);
+             Serial.println("Skrecaj w lewo");
+          } else if (cordX >= 10 && cordX <= 100) {
+            /* skrecaj w prawo */
+             SetPowerLevel(PowerSideEnum::Right, 150);
+             SetPowerLevel(PowerSideEnum::Left, 150 + s);
+             Serial.println("Skrecaj w prawo");
+          }
+         
+        /*
+        if(packet.cordX < -5) {
+         // Serial.println("SKREC PRAWO ");
+          setRightSpeed(125);
+        }
+        else if(packet.cordX > 5) {
+         // Serial.println("SKREC LEWO ");
+          setLeftSpeed(125);
+        } else {
+         // Serial.println("Jedz prosto ");
+          setCustomSpeed(255);
+        }
+      
+        //setRightSpeed
+        //setLeftSpeed
+        
+       // showParsedData(packet);
+       */
+        newData = false;
+    }
+  }
 }

@@ -9,6 +9,11 @@
 #define RIGHT_ENCODER_0 42
 #define RIGHT_ENCODER_1 43
 
+enum class PowerSideEnum
+{
+  Left,
+  Right
+};
 
 //speeds
 
