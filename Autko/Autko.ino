@@ -14,7 +14,6 @@ const unsigned int backSensorEcho = 11;
 const byte numChars = 256;
 char receivedChars[numChars];
 char tempChars[numChars];        // temporary array for use when parsing
-dataPacket packet;
 
 boolean newData = false;
 
@@ -214,7 +213,7 @@ bool recvWithStartEndMarkers() {
     if (Serial.available() > 0 && newData == false) {
         do {
         rc = Serial.read();
-        
+        Serial.print(rc);
         if (recvInProgress == true) {
             if (rc != endMarker) {
                 receivedChars[ndx] = rc;
@@ -274,7 +273,7 @@ void loop() {
     if (recvWithStartEndMarkers()) {
         //Serial.println("Odebrano dane");
         strcpy(tempChars, receivedChars);
-        packet = parseData();
+        dataPacket packet = parseData();
         showParsedData(packet);
         int cordX = packet.cordX;
         int carSpeed = getPidSpeed(cordX);
