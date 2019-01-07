@@ -229,7 +229,6 @@ void recvWithStartEndMarkers() {
                 newData = true;
             }
         }
-
         else if (rc == startMarker) {
             recvInProgress = true;
         }
@@ -273,12 +272,9 @@ void loop() {
         //Serial.println("Odebrano dane");
         strcpy(tempChars, receivedChars);
         packet = parseData();
+        showParsedData(packet);
         int cordX = packet.cordX;
         int carSpeed = getPidSpeed(cordX);
-//        Serial.println("CordX: ");
-//        Serial.print(cordX);
-//        Serial.println("Car speed");
-//        Serial.println(carSpeed);
         
         if (carSpeed <= maximumX && carSpeed >= minimumX) {
           int s = map(carSpeed, minimumX, maximumX, 0, 105);
