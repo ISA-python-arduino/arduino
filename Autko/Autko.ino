@@ -244,8 +244,8 @@ dataPacket parseData() {      // split the data into its parts
 
     char * strtokIndx; // this is used by strtok() as an index
 
-    strtokIndx = strtok(tempChars,",");      // get the first part - the string
-    strcpy(tmpPacket.message, strtokIndx); // copy it to messageFromPC
+    //strtokIndx = strtok(tempChars,",");      // get the first part - the string
+    //strcpy(tmpPacket.message, strtokIndx); // copy it to messageFromPC
  
     strtokIndx = strtok(NULL, ","); // this continues where the previous call left off
     tmpPacket.cordX = atoi(strtokIndx);     // convert this part to an integer
