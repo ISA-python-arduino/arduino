@@ -37,6 +37,8 @@ float Td = 1.05; //stała różniczkowania
 const int minimumX= -100;
 const int maximumX = 100;
 
+const int basicSpeed = 90;
+
 void setUltraSound(int us) {
   pinMode(ultrasound_trigger_pin[us], OUTPUT);
   pinMode(ultrasound_echo_pin[us], INPUT);
@@ -193,14 +195,14 @@ void loop() {
       pidSpeed = 105;
     }
     if (cordX >= -10 && cordX <= 10) {
-       SetPowerLevel(PowerSideEnum::Right, 150);
-       SetPowerLevel(PowerSideEnum::Left, 150);
+       SetPowerLevel(PowerSideEnum::Right, basicSpeed);
+       SetPowerLevel(PowerSideEnum::Left, basicSpeed);
     } else if (cordX <= -10 && cordX >= -100) {
-       SetPowerLevel(PowerSideEnum::Right, 150 + s);
-       SetPowerLevel(PowerSideEnum::Left, 150);
+       SetPowerLevel(PowerSideEnum::Right, basicSpeed + s);
+       SetPowerLevel(PowerSideEnum::Left, basicSpeed);
     } else if (cordX >= 10 && cordX <= 100) {
-       SetPowerLevel(PowerSideEnum::Right, 150);
-       SetPowerLevel(PowerSideEnum::Left, 150 + s);
+       SetPowerLevel(PowerSideEnum::Right, basicSpeed);
+       SetPowerLevel(PowerSideEnum::Left, basicSpeed + s);
     }   
     newData = false;
   } else if (distance < 20) {
