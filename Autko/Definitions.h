@@ -15,6 +15,50 @@ enum class PowerSideEnum
   Right
 };
 
+#define US_FRONT              0
+#define US_FRONT_TRIGGER_PIN  8
+#define US_FRONT_ECHO_PIN     9
+
+#define US_BACK               1
+#define US_BACK_TRIGGER_PIN   10
+#define US_BACK_ECHO_PIN      11
+
+#define US_LEFT               2
+#define US_LEFT_TRIGGER_PIN   6
+#define US_LEFT_ECHO_PIN      7
+
+#define US_RIGHT              3
+#define US_RIGHT_TRIGGER_PIN  4
+#define US_RIGHT_ECHO_PIN     5
+ 
+enum class UltraSoundSensor {
+  Front = 0,
+  Back = 1,
+  Left = 2,
+  Right = 3,
+  
+  __first = Front,
+  __last = Right,
+  
+  All,
+};
+ 
+
+int ultrasound_trigger_pin[] = {
+  [UltraSoundSensor::Front] = US_FRONT_TRIGGER_PIN,
+  [UltraSoundSensor::Back]  = US_BACK_TRIGGER_PIN,
+  [UltraSoundSensor::Left]  = US_LEFT_TRIGGER_PIN,
+  [UltraSoundSensor::Right] = US_RIGHT_TRIGGER_PIN,
+};
+
+ 
+int ultrasound_echo_pin[] = {
+  [UltraSoundSensor::Front] = US_FRONT_ECHO_PIN,
+  [UltraSoundSensor::Back]  = US_BACK_ECHO_PIN,
+  [UltraSoundSensor::Left]  = US_LEFT_ECHO_PIN,
+  [UltraSoundSensor::Right] = US_RIGHT_ECHO_PIN,
+};
+
 //speeds
 
 #define STOP 0

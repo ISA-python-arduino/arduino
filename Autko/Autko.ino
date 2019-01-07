@@ -17,6 +17,13 @@ char tempChars[numChars];        // temporary array for use when parsing
 
 boolean newData = false;
 
+volatile float distFront = 0.0f;
+volatile float distBack = 0.0f;
+
+volatile float frontMeasures[number_of_mesures];
+volatile float backMeasures[number_of_mesures];
+volatile int mesure_index = 0;
+
 unsigned long t;
 float dt = 20; //co ile pobiera się próbkę
 int ep = 0; //uchyb poprzedni
@@ -26,26 +33,22 @@ int C; //część całkująca
 int Kp = 1; //wzmocnienie
 int Ti = 8; //stała całkowania
 float Td = 1.05; //stała różniczkowania
-//td bylo 1.2 dobre w miare !
 
 const int minimumX= -100;
 const int maximumX = 100;
 
-void flushReceiveSerial(){
-  while(Serial.available() > 0) {
-    char ch = Serial.read();
-  }
+void setUltraSound(int us) {
+  pinMode(ultrasound_trigger_pin[us], OUTPUT);
+  pinMode(ultrasound_echo_pin[us], INPUT);
+  digitalWrite(ultrasound_trigger_pin[us],0);
 }
 
 void setup() {
   Serial.begin(57600);
-
+  setUltraSound(US_FRONT);
   Engine();
-//  while (!Serial) {
-//    ; // wait for serial port to connect. Needed for native USB port only
-//  }
-//  /Serial.setTimeout(50);
-//  flushReceiveSerial();
+  while (!Serial) {
+  }
   t = millis();
 }
 
@@ -67,99 +70,6 @@ float measure( int trigger, int echo )
   return result > 200.0 ? 200.0 : result;
 }
 
-volatile float distFront = 0.0f;
-volatile float distBack = 0.0f;
-
-volatile float frontMeasures[number_of_mesures];
-volatile float backMeasures[number_of_mesures];
-volatile int mesure_index = 0;
-
-float minimum(int count, volatile float measures[])
-{
-  if (count < 2)
-  {
-    return min( measures[0], measures[1]);
-  }
-  
-  float result = measures[0];
-  for (int i = 1; i < count; i++)
-  {
-    result = min(result, measures[i]);
-  }
-  return result;
-}
-
-
-float remove_min_and_count_average(float minimum, int count, volatile float measures[])
-{
-  float sum = 0.0;
-  for (int i = 0; i < count; i++)
-  {
-    sum += measures[i];
-  }
-  sum -= minimum;
-
-  return sum / (float)(count - 1.0);
-}
-
-void average()
-{
-  frontMeasures[mesure_index] = measure(frontSensorTrigger, frontSensorEcho);
-  backMeasures[mesure_index] = measure(backSensorTrigger, backSensorEcho);
-  ++mesure_index;
-  if ( mesure_index == number_of_mesures )
-  {
-    mesure_index = 0;
-  }
-  float minFront = minimum(number_of_mesures, frontMeasures);
-  float minBack = minimum(number_of_mesures, backMeasures);
-  
-  distFront = remove_min_and_count_average(minFront, number_of_mesures, frontMeasures);
-  distBack = remove_min_and_count_average(minBack, number_of_mesures, backMeasures);
-}
-
-void setLeftSpeed( short s )
-{
-  if (s < 0)
-  {
-    digitalWrite(B_PHASE, LOW);
-  }
-  else 
-  {
-    digitalWrite(B_PHASE, HIGH);
-  }
-  
-  analogWrite(B_ENABLE, s < 0 ? -s : s);
-}
-
-void setRightSpeed( short s)
-{
-  if (s < 0)
-  {
-    digitalWrite(A_PHASE, LOW);
-  }
-  else 
-  {
-    digitalWrite(A_PHASE, HIGH);
-  }
-  analogWrite(A_ENABLE, s < 0 ? -s : s);
-}
-
-void setCustomSpeed(short s)
-{
-  setLeftSpeed(s);
-  setRightSpeed(s);
-}
-
-volatile static bool straight = true; 
-
-
-struct control { 
-  int code;
-  unsigned char s;
-};
-struct control c;
-
 int getPid(int value) {
   return pid(value);
 }
@@ -169,7 +79,7 @@ int pid(int x)
   unsigned long currentTime = millis();
   dt = currentTime - t;
   t = currentTime;
-  en = x; //tutaj założyłem, że wartość uchybu poznajemy za pomocą odczytu z pinu A2
+  en = x;
   C += ((ep + en)/2)*dt;
   U = Kp*(en + (1/Ti)*C/1000 + Td*(en - ep)*1000/dt);
   ep = en;
@@ -245,23 +155,15 @@ void recvWithStartEndMarkers() {
     }
 }
 
-dataPacket parseData() {      // split the data into its parts
-
+dataPacket parseData() {
     dataPacket tmpPacket;
-
-    char * strtokIndx; // this is used by strtok() as an index
-
-    strtokIndx = strtok(tempChars,",");      // get the first part - the string
-    strcpy(tmpPacket.message, strtokIndx); // copy it to messageFromPC
- 
-    strtokIndx = strtok(NULL, ","); // this continues where the previous call left off
-    tmpPacket.cordX = atoi(strtokIndx);     // convert this part to an integer
-
+    char * strtokIndx; 
+    strtokIndx = strtok(tempChars,",");
+    strcpy(tmpPacket.message, strtokIndx);
     strtokIndx = strtok(NULL, ",");
-    tmpPacket.cordY = atoi(strtokIndx);     // convert this part to a float
-
-    //Serial.println("CordX: ");
-    //Serial.print(tmpPacket.cordX);
+    tmpPacket.cordX = atoi(strtokIndx);
+    strtokIndx = strtok(NULL, ",");
+    tmpPacket.cordY = atoi(strtokIndx);
     return tmpPacket;
 }
 
@@ -275,41 +177,34 @@ void showParsedData(dataPacket packet) {
     Serial.println(packet.cordY);
 }
 
-/*z repo ISA */
 void loop() {
+  float distance = measure(US_FRONT_TRIGGER_PIN, US_FRONT_ECHO_PIN);
+  
   recvWithStartEndMarkers();
-    if (newData) {
-        //Serial.println("Odebrano dane");
-        strcpy(tempChars, receivedChars);
-        dataPacket packet = parseData();
-        //showParsedData(packet);
-        int cordX = packet.cordX;
-        int s = map(abs(cordX), 0, maximumX, 0, 105);
-        int pidSpeed = getPid(s);
-        if (pidSpeed < 0) { 
-          pidSpeed = 0;
-        } else if (pidSpeed > 105) {
-          pidSpeed = 105;
-        }
-        Serial.print("Predkosc po pid ");
-        Serial.println(pidSpeed);
-        Serial.print("CordX ");
-        Serial.println(cordX);
-        if (cordX >= -10 && cordX <= 10) {
-           SetPowerLevel(PowerSideEnum::Right, 150);
-           SetPowerLevel(PowerSideEnum::Left, 150);
-           Serial.println("Jedz prosto");
-        } else if (cordX <= -10 && cordX >= -100) {
-          /* skrecaj w lewo */
-           SetPowerLevel(PowerSideEnum::Right, 150 + s);
-           SetPowerLevel(PowerSideEnum::Left, 150);
-           Serial.println("Skrecaj w lewo");
-        } else if (cordX >= 10 && cordX <= 100) {
-          /* skrecaj w prawo */
-           SetPowerLevel(PowerSideEnum::Right, 150);
-           SetPowerLevel(PowerSideEnum::Left, 150 + s);
-           Serial.println("Skrecaj w prawo");
-        }   
+  if (newData && distance > 20.0f) {
+    strcpy(tempChars, receivedChars);
+    dataPacket packet = parseData();
+    int cordX = packet.cordX;
+    int s = map(abs(cordX), 0, maximumX, 0, 105);
+    int pidSpeed = getPid(s);
+    if (pidSpeed < 0) { 
+      pidSpeed = 0;
+    } else if (pidSpeed > 105) {
+      pidSpeed = 105;
+    }
+    if (cordX >= -10 && cordX <= 10) {
+       SetPowerLevel(PowerSideEnum::Right, 150);
+       SetPowerLevel(PowerSideEnum::Left, 150);
+    } else if (cordX <= -10 && cordX >= -100) {
+       SetPowerLevel(PowerSideEnum::Right, 150 + s);
+       SetPowerLevel(PowerSideEnum::Left, 150);
+    } else if (cordX >= 10 && cordX <= 100) {
+       SetPowerLevel(PowerSideEnum::Right, 150);
+       SetPowerLevel(PowerSideEnum::Left, 150 + s);
+    }   
     newData = false;
+  } else if (distance < 20) {
+    SetPowerLevel(PowerSideEnum::Right, 0);
+    SetPowerLevel(PowerSideEnum::Left, 0);
   }
 }
