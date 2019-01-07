@@ -17,16 +17,16 @@ char tempChars[numChars];        // temporary array for use when parsing
 
 boolean newData = false;
 
-
+unsigned long t;
 float dt = 20; //co ile pobiera się próbkę
-int ep; //uchyb poprzedni
+int ep = 0; //uchyb poprzedni
 int en; //uchyb następny
 int U; //sygnał sterujący
 int C; //część całkująca
-int Kp = 2; //wzmocnienie
-int Ti = 4; //stała całkowania
-int Td = 8; //stała różniczkowania
-
+int Kp = 1; //wzmocnienie
+int Ti = 8; //stała całkowania
+float Td = 1.05; //stała różniczkowania
+//td bylo 1.2 dobre w miare !
 
 const int minimumX= -100;
 const int maximumX = 100;
@@ -46,6 +46,7 @@ void setup() {
 //  }
 //  /Serial.setTimeout(50);
 //  flushReceiveSerial();
+  t = millis();
 }
 
 float measure( int trigger, int echo )
@@ -159,12 +160,15 @@ struct control {
 };
 struct control c;
 
-int getPidSpeed(int cordX) {
-  return pid(cordX);
+int getPid(int value) {
+  return pid(value);
 }
 
 int pid(int x)
 {
+  unsigned long currentTime = millis();
+  dt = currentTime - t;
+  t = currentTime;
   en = x; //tutaj założyłem, że wartość uchybu poznajemy za pomocą odczytu z pinu A2
   C += ((ep + en)/2)*dt;
   U = Kp*(en + (1/Ti)*C/1000 + Td*(en - ep)*1000/dt);
@@ -278,32 +282,34 @@ void loop() {
         //Serial.println("Odebrano dane");
         strcpy(tempChars, receivedChars);
         dataPacket packet = parseData();
-        showParsedData(packet);
+        //showParsedData(packet);
         int cordX = packet.cordX;
-        int carSpeed = getPidSpeed(cordX);
-        
-        if (carSpeed <= maximumX && carSpeed >= minimumX) {
-          int s = map(carSpeed, minimumX, maximumX, 0, 105);
-//          Serial.print("Predkosc po pid ");
-//          Serial.println(s);
-//          Serial.print("CordX ");
-//          Serial.println(cordX);
-          if (cordX >= -10 && cordX <= 10) {
-             SetPowerLevel(PowerSideEnum::Right, 150);
-             SetPowerLevel(PowerSideEnum::Left, 150);
-//             Serial.println("Jedz prosto");
-          } else if (cordX <= -10 && cordX >= -100) {
-            /* skrecaj w lewo */
-             SetPowerLevel(PowerSideEnum::Right, 150 + s);
-             SetPowerLevel(PowerSideEnum::Left, 150);
-//             Serial.println("Skrecaj w lewo");
-          } else if (cordX >= 10 && cordX <= 100) {
-            /* skrecaj w prawo */
-             SetPowerLevel(PowerSideEnum::Right, 150);
-             SetPowerLevel(PowerSideEnum::Left, 150 + s);
-//             Serial.println("Skrecaj w prawo");
-          }
-    }
+        int s = map(abs(cordX), 0, maximumX, 0, 105);
+        int pidSpeed = getPid(s);
+        if (pidSpeed < 0) { 
+          pidSpeed = 0;
+        } else if (pidSpeed > 105) {
+          pidSpeed = 105;
+        }
+        Serial.print("Predkosc po pid ");
+        Serial.println(pidSpeed);
+        Serial.print("CordX ");
+        Serial.println(cordX);
+        if (cordX >= -10 && cordX <= 10) {
+           SetPowerLevel(PowerSideEnum::Right, 150);
+           SetPowerLevel(PowerSideEnum::Left, 150);
+           Serial.println("Jedz prosto");
+        } else if (cordX <= -10 && cordX >= -100) {
+          /* skrecaj w lewo */
+           SetPowerLevel(PowerSideEnum::Right, 150 + s);
+           SetPowerLevel(PowerSideEnum::Left, 150);
+           Serial.println("Skrecaj w lewo");
+        } else if (cordX >= 10 && cordX <= 100) {
+          /* skrecaj w prawo */
+           SetPowerLevel(PowerSideEnum::Right, 150);
+           SetPowerLevel(PowerSideEnum::Left, 150 + s);
+           Serial.println("Skrecaj w prawo");
+        }   
     newData = false;
   }
 }
