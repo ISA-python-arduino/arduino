@@ -272,15 +272,13 @@ void loop() {
     if (newData == true) {
         //Serial.println("Odebrano dane");
         strcpy(tempChars, receivedChars);
-            // this temporary copy is necessary to protect the original data
-            //   because strtok() used in parseData() replaces the commas with \0
         packet = parseData();
         int cordX = packet.cordX;
         int carSpeed = getPidSpeed(cordX);
-        Serial.println("CordX: ");
-        Serial.print(cordX);
-        Serial.println("Car speed");
-        Serial.println(carSpeed);
+//        Serial.println("CordX: ");
+//        Serial.print(cordX);
+//        Serial.println("Car speed");
+//        Serial.println(carSpeed);
         
         if (carSpeed <= maximumX && carSpeed >= minimumX) {
           int s = map(carSpeed, minimumX, maximumX, 0, 105);
@@ -291,37 +289,18 @@ void loop() {
           if (cordX >= -10 && cordX <= 10) {
              SetPowerLevel(PowerSideEnum::Right, 150);
              SetPowerLevel(PowerSideEnum::Left, 150);
-             Serial.println("Jedz prosto");
+//             Serial.println("Jedz prosto");
           } else if (cordX <= -10 && cordX >= -100) {
             /* skrecaj w lewo */
              SetPowerLevel(PowerSideEnum::Right, 150 + s);
              SetPowerLevel(PowerSideEnum::Left, 150);
-             Serial.println("Skrecaj w lewo");
+//             Serial.println("Skrecaj w lewo");
           } else if (cordX >= 10 && cordX <= 100) {
             /* skrecaj w prawo */
              SetPowerLevel(PowerSideEnum::Right, 150);
              SetPowerLevel(PowerSideEnum::Left, 150 + s);
-             Serial.println("Skrecaj w prawo");
+//             Serial.println("Skrecaj w prawo");
           }
-         
-        /*
-        if(packet.cordX < -5) {
-         // Serial.println("SKREC PRAWO ");
-          setRightSpeed(125);
-        }
-        else if(packet.cordX > 5) {
-         // Serial.println("SKREC LEWO ");
-          setLeftSpeed(125);
-        } else {
-         // Serial.println("Jedz prosto ");
-          setCustomSpeed(255);
-        }
-      
-        //setRightSpeed
-        //setLeftSpeed
-        
-       // showParsedData(packet);
-       */
         newData = false;
     }
   }
