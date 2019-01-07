@@ -6,7 +6,7 @@
 
 struct dataPacket 
 {
-   // char message[64] = {0};
+    char message[64] = {0};
     int cordX = 0;
     int cordY = 0;
 

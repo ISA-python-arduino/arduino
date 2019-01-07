@@ -11,7 +11,7 @@ const unsigned int frontSensorEcho = 9;
 const unsigned int backSensorTrigger = 10;
 const unsigned int backSensorEcho = 11;
 
-const byte numChars = 256;
+const byte numChars = 32;
 char receivedChars[numChars];
 char tempChars[numChars];        // temporary array for use when parsing
 
@@ -33,7 +33,7 @@ const int maximumX = 100;
 
 void flushReceiveSerial(){
   while(Serial.available() > 0) {
-    char ch Serial.read();
+    char ch = Serial.read();
   }
 }
 
@@ -41,11 +41,11 @@ void setup() {
   Serial.begin(57600);
 
   Engine();
-  while (!Serial) {
-    ; // wait for serial port to connect. Needed for native USB port only
-  }
-  Serial.setTimeout(50);
-  flushReceiveSerial();
+//  while (!Serial) {
+//    ; // wait for serial port to connect. Needed for native USB port only
+//  }
+//  /Serial.setTimeout(50);
+//  flushReceiveSerial();
 }
 
 float measure( int trigger, int echo )
@@ -209,17 +209,16 @@ void SetPowerLevel(PowerSideEnum side, int level)
   } 
 }
 
-bool recvWithStartEndMarkers() {
+void recvWithStartEndMarkers() {
     static boolean recvInProgress = false;
     static byte ndx = 0;
     char startMarker = '<';
     char endMarker = '>';
     char rc;
 
-    if (Serial.available() > 0 && newData == false) {
-        do {
+    while (Serial.available() > 0 && newData == false) {
         rc = Serial.read();
-        Serial.print(rc);
+
         if (recvInProgress == true) {
             if (rc != endMarker) {
                 receivedChars[ndx] = rc;
@@ -235,14 +234,11 @@ bool recvWithStartEndMarkers() {
                 newData = true;
             }
         }
+
         else if (rc == startMarker) {
             recvInProgress = true;
         }
-        } while (recvInProgress);
-        flushReceiveSerial();
-        return true;
     }
-    return false;
 }
 
 dataPacket parseData() {      // split the data into its parts
@@ -251,8 +247,8 @@ dataPacket parseData() {      // split the data into its parts
 
     char * strtokIndx; // this is used by strtok() as an index
 
-    //strtokIndx = strtok(tempChars,",");      // get the first part - the string
-    //strcpy(tmpPacket.message, strtokIndx); // copy it to messageFromPC
+    strtokIndx = strtok(tempChars,",");      // get the first part - the string
+    strcpy(tmpPacket.message, strtokIndx); // copy it to messageFromPC
  
     strtokIndx = strtok(NULL, ","); // this continues where the previous call left off
     tmpPacket.cordX = atoi(strtokIndx);     // convert this part to an integer
@@ -267,8 +263,8 @@ dataPacket parseData() {      // split the data into its parts
 
 
 void showParsedData(dataPacket packet) {
-    //Serial.print("Message ");
-    //Serial.println(packet.message);
+    Serial.print("Message ");
+    Serial.println(packet.message);
     Serial.print("CORDX ");
     Serial.println(packet.cordX);
     Serial.print("CORDY ");
@@ -277,7 +273,8 @@ void showParsedData(dataPacket packet) {
 
 /*z repo ISA */
 void loop() {
-    if (recvWithStartEndMarkers()) {
+  recvWithStartEndMarkers();
+    if (newData) {
         //Serial.println("Odebrano dane");
         strcpy(tempChars, receivedChars);
         dataPacket packet = parseData();
@@ -287,10 +284,10 @@ void loop() {
         
         if (carSpeed <= maximumX && carSpeed >= minimumX) {
           int s = map(carSpeed, minimumX, maximumX, 0, 105);
-          Serial.print("Predkosc po pid ");
-          Serial.println(s);
-          Serial.print("CordX ");
-          Serial.println(cordX);
+//          Serial.print("Predkosc po pid ");
+//          Serial.println(s);
+//          Serial.print("CordX ");
+//          Serial.println(cordX);
           if (cordX >= -10 && cordX <= 10) {
              SetPowerLevel(PowerSideEnum::Right, 150);
              SetPowerLevel(PowerSideEnum::Left, 150);
@@ -306,7 +303,7 @@ void loop() {
              SetPowerLevel(PowerSideEnum::Left, 150 + s);
 //             Serial.println("Skrecaj w prawo");
           }
-        newData = false;
     }
+    newData = false;
   }
 }
