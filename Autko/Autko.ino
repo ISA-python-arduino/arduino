@@ -11,7 +11,7 @@ const unsigned int frontSensorEcho = 9;
 const unsigned int backSensorTrigger = 10;
 const unsigned int backSensorEcho = 11;
 
-const byte numChars = 32;
+const byte numChars = 256;
 char receivedChars[numChars];
 char tempChars[numChars];        // temporary array for use when parsing
 dataPacket packet;
@@ -204,16 +204,17 @@ void SetPowerLevel(PowerSideEnum side, int level)
   } 
 }
 
-void recvWithStartEndMarkers() {
+bool recvWithStartEndMarkers() {
     static boolean recvInProgress = false;
     static byte ndx = 0;
     char startMarker = '<';
     char endMarker = '>';
     char rc;
 
-    while (Serial.available() > 0 && newData == false) {
+    if (Serial.available() > 0 && newData == false) {
+        do {
         rc = Serial.read();
-
+        
         if (recvInProgress == true) {
             if (rc != endMarker) {
                 receivedChars[ndx] = rc;
@@ -232,7 +233,10 @@ void recvWithStartEndMarkers() {
         else if (rc == startMarker) {
             recvInProgress = true;
         }
+        } while (recvInProgress);
+        return true;
     }
+    return false;
 }
 
 dataPacket parseData() {      // split the data into its parts
@@ -267,8 +271,7 @@ void showParsedData(dataPacket packet) {
 
 /*z repo ISA */
 void loop() {
-    recvWithStartEndMarkers();
-    if (newData == true) {
+    if (recvWithStartEndMarkers()) {
         //Serial.println("Odebrano dane");
         strcpy(tempChars, receivedChars);
         packet = parseData();
