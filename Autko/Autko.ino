@@ -31,6 +31,12 @@ int Td = 8; //stała różniczkowania
 const int minimumX= -100;
 const int maximumX = 100;
 
+void flushReceiveSerial(){
+  while(Serial.available() > 0) {
+    char ch Serial.read();
+  }
+}
+
 void setup() {
   Serial.begin(57600);
 
@@ -39,7 +45,7 @@ void setup() {
     ; // wait for serial port to connect. Needed for native USB port only
   }
   Serial.setTimeout(50);
-  
+  flushReceiveSerial();
 }
 
 float measure( int trigger, int echo )
@@ -233,6 +239,7 @@ bool recvWithStartEndMarkers() {
             recvInProgress = true;
         }
         } while (recvInProgress);
+        flushReceiveSerial();
         return true;
     }
     return false;
