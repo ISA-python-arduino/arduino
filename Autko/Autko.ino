@@ -186,6 +186,14 @@ void loop() {
   if (newData && distance > 20.0f) {
     strcpy(tempChars, receivedChars);
     dataPacket packet = parseData();
+    volatile int st = strcmp("stop", packet.message);
+  
+    if ( st == 0) {
+      SetPowerLevel(PowerSideEnum::Right, 0);
+      SetPowerLevel(PowerSideEnum::Left, 0);
+      newData = false;
+      return;
+    }
     int cordX = packet.cordX;
     int s = map(abs(cordX), 0, maximumX, 0, 105);
     int pidSpeed = getPid(s);
